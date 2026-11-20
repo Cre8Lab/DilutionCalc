@@ -41,29 +41,6 @@
 
   <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
 
-    <!-- 常用藥劑快速帶入 -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-      <label class="block text-sm font-bold text-slate-500 mb-2">快速帶入常用藥劑</label>
-      <div class="relative">
-        <select id="presetSelect" onchange="applyPreset()" class="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-900 text-lg font-bold rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-blue-600">
-          <option value="custom">-- 自訂輸入數值 --</option>
-          <option value="koh" selected>KOH (A109) - 100%</option>
-          <option value="tea">TEA (A703) - 50%</option>
-          <option value="mo">鉬酸鈉 A115C - 99.8%</option>
-          <option value="ttaa">TTAA507C - 100%</option>
-          <option value="na_nitrite">亞硝酸鈉 A124 - 100%</option>
-          <option value="h2o2">H2O2 - 35%</option>
-          <option value="fe_sulfate">聚硫酸鐵 - 10%</option>
-          <option value="new">New - 35%</option>
-          <option value="no2">NO2 - 10%</option>
-          <option value="sebacic">癸二酸 - 100%</option>
-        </select>
-        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-        </div>
-      </div>
-    </div>
-
     <!-- 卡片一：一次稀釋 -->
     <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="bg-amber-50 px-4 py-3 border-b border-amber-100 flex items-center justify-between">
@@ -107,7 +84,7 @@
         <div class="bg-amber-50/70 rounded-xl p-3.5 border border-amber-200 flex items-center justify-between">
           <div>
             <div class="text-sm font-bold text-amber-800">一次稀釋液濃度</div>
-            <div id="stage1Hint" class="text-xs text-amber-600 mt-0.5">總重 100 g</div>
+            <div id="stage1Hint" class="text-xs text-amber-600 mt-0.5">配製總量 100 g</div>
           </div>
           <div class="text-right">
             <span id="c1Result" class="text-3xl font-extrabold text-amber-700 tracking-tight">10,000</span>
@@ -148,7 +125,7 @@
             <input type="number" inputmode="decimal" id="c2Input" value="100" oninput="calculate()" class="input-box w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-2xl font-bold text-slate-900">
           </div>
           <div>
-            <label id="v2Label" class="block text-base font-bold text-slate-700 mb-1.5">加水/稀釋至 (<span class="unit-label">g</span>)</label>
+            <label id="v2Label" class="block text-base font-bold text-slate-700 mb-1.5">加水量 (<span class="unit-label">g</span>)</label>
             <input type="number" inputmode="decimal" id="v2Input" value="100" oninput="calculate()" class="input-box w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-2xl font-bold text-slate-900">
           </div>
         </div>
@@ -178,8 +155,8 @@
     </section>
 
     <!-- 一鍵清空重算按鈕 -->
-    <button onclick="resetValues()" class="w-full py-3.5 rounded-xl bg-white border border-slate-300 text-slate-600 font-bold text-base active:bg-slate-100 transition">
-      重設為預設值
+    <button onclick="clearValues()" class="w-full py-3.5 rounded-xl bg-white border border-slate-300 text-slate-600 font-bold text-base active:bg-slate-100 transition">
+      清空數值
     </button>
 
   </main>
@@ -191,19 +168,6 @@
     let mode2 = 'add';     // 'add' = 外加溶劑, 'total' = 定容至總量
     let isManualC1 = false;
     let lastW2Value = '1.0101';
-
-    const presets = {
-      koh:        { c0: 100,  w1: 1,  v1: 100, m1: 'total', c2: 100,  v2: 100, m2: 'add' },
-      tea:        { c0: 50,   w1: 1,  v1: 1,   m1: 'total', c2: 20,   v2: 500, m2: 'add' },
-      mo:         { c0: 99.8, w1: 1,  v1: 1,   m1: 'total', c2: 30,   v2: 500, m2: 'add' },
-      ttaa:       { c0: 100,  w1: 1,  v1: 1,   m1: 'total', c2: 3333, v2: 8,   m2: 'add' },
-      na_nitrite: { c0: 100,  w1: 1,  v1: 1,   m1: 'total', c2: 3333, v2: 8,   m2: 'add' },
-      h2o2:       { c0: 35,   w1: 3,  v1: 105, m1: 'total', c2: 60,   v2: 500, m2: 'add' },
-      fe_sulfate: { c0: 10,   w1: 10, v1: 100, m1: 'total', c2: 60,   v2: 500, m2: 'add' },
-      new:        { c0: 35,   w1: 3,  v1: 105, m1: 'total', c2: 200,  v2: 500, m2: 'add' },
-      no2:        { c0: 10,   w1: 10, v1: 100, m1: 'total', c2: 200,  v2: 500, m2: 'add' },
-      sebacic:    { c0: 100,  w1: 10, v1: 110, m1: 'total', c2: 200,  v2: 500, m2: 'add' }
-    };
 
     function setUnit(unit) {
       currentUnit = unit;
@@ -283,29 +247,14 @@
       calculate();
     }
 
-    function applyPreset() {
-      const key = document.getElementById('presetSelect').value;
-      if (key === 'custom') return;
-      const p = presets[key];
-
-      if (!c0IsPercent) toggleC0Unit();
-      document.getElementById('c0Input').value = p.c0;
-      document.getElementById('w1Input').value = p.w1;
-      document.getElementById('v1Input').value = p.v1;
-      document.getElementById('c2Input').value = p.c2;
-      document.getElementById('v2Input').value = p.v2;
-
-      mode1 = p.m1;
-      mode2 = p.m2;
-      if (isManualC1) toggleManualC1();
-
-      updateModeUI();
+    function clearValues() {
+      document.getElementById('c0Input').value = '';
+      document.getElementById('w1Input').value = '';
+      document.getElementById('v1Input').value = '';
+      document.getElementById('c2Input').value = '';
+      document.getElementById('v2Input').value = '';
+      document.getElementById('c1ManualInput').value = '';
       calculate();
-    }
-
-    function resetValues() {
-      document.getElementById('presetSelect').value = 'koh';
-      applyPreset();
     }
 
     function formatNum(num, decimals = 2) {
