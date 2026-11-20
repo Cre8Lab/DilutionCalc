@@ -48,9 +48,11 @@
           <span class="w-7 h-7 rounded-full bg-amber-500 text-white text-base font-bold flex items-center justify-center">1</span>
           <h2 class="font-bold text-lg text-slate-900">一次稀釋</h2>
         </div>
-        <button id="mode1Btn" onclick="toggleMode(1)" class="text-sm font-bold px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-800 active:scale-95 transition">
-          定容至總量
-        </button>
+        <!-- 雙按鈕分段切換 -->
+        <div class="flex bg-amber-200/60 p-1 rounded-lg border border-amber-300/70">
+          <button id="m1TotalBtn" onclick="setMode(1, 'total')" class="px-2.5 py-1 text-xs font-bold rounded-md bg-amber-600 text-white shadow-sm transition">定容</button>
+          <button id="m1AddBtn" onclick="setMode(1, 'add')" class="px-2.5 py-1 text-xs font-bold rounded-md text-amber-900 transition">加水</button>
+        </div>
       </div>
 
       <div class="p-4 space-y-4">
@@ -101,9 +103,11 @@
           <span class="w-7 h-7 rounded-full bg-blue-600 text-white text-base font-bold flex items-center justify-center">2</span>
           <h2 class="font-bold text-lg text-slate-900">二次稀釋</h2>
         </div>
-        <button id="mode2Btn" onclick="toggleMode(2)" class="text-sm font-bold px-3 py-1.5 rounded-lg bg-white border border-blue-300 text-blue-800 active:scale-95 transition">
-          外加溶劑(水)
-        </button>
+        <!-- 雙按鈕分段切換 -->
+        <div class="flex bg-blue-200/60 p-1 rounded-lg border border-blue-300/70">
+          <button id="m2TotalBtn" onclick="setMode(2, 'total')" class="px-2.5 py-1 text-xs font-bold rounded-md text-blue-900 transition">定容</button>
+          <button id="m2AddBtn" onclick="setMode(2, 'add')" class="px-2.5 py-1 text-xs font-bold rounded-md bg-blue-600 text-white shadow-sm transition">加水</button>
+        </div>
       </div>
 
       <div class="p-4 space-y-4">
@@ -164,8 +168,8 @@
   <script>
     let currentUnit = 'g';
     let c0IsPercent = true;
-    let mode1 = 'total';   // 'total' = 定容至總量, 'add' = 外加溶劑
-    let mode2 = 'add';     // 'add' = 外加溶劑, 'total' = 定容至總量
+    let mode1 = 'total';   // 'total' = 定容至總量, 'add' = 外加溶劑(加水)
+    let mode2 = 'add';     // 'add' = 外加溶劑(加水), 'total' = 定容至總量
     let isManualC1 = false;
     let lastW2Value = '1.0101';
 
@@ -199,35 +203,45 @@
       calculate();
     }
 
-    function toggleMode(stage) {
+    function setMode(stage, newMode) {
       if (stage === 1) {
-        mode1 = mode1 === 'total' ? 'add' : 'total';
+        mode1 = newMode;
       } else {
-        mode2 = mode2 === 'add' ? 'total' : 'add';
+        mode2 = newMode;
       }
       updateModeUI();
       calculate();
     }
 
     function updateModeUI() {
-      const btn1 = document.getElementById('mode1Btn');
+      // 一次稀釋雙按鈕樣式與下方欄位標題
+      const m1Total = document.getElementById('m1TotalBtn');
+      const m1Add = document.getElementById('m1AddBtn');
       const v1Label = document.getElementById('v1Label');
+
       if (mode1 === 'total') {
-        btn1.textContent = '定容至總量';
+        m1Total.className = 'px-2.5 py-1 text-xs font-bold rounded-md bg-amber-600 text-white shadow-sm transition';
+        m1Add.className = 'px-2.5 py-1 text-xs font-bold rounded-md text-amber-900 transition';
         v1Label.innerHTML = `稀釋至 (<span class="unit-label">${currentUnit}</span>)`;
       } else {
-        btn1.textContent = '外加溶劑(水)';
+        m1Total.className = 'px-2.5 py-1 text-xs font-bold rounded-md text-amber-900 transition';
+        m1Add.className = 'px-2.5 py-1 text-xs font-bold rounded-md bg-amber-600 text-white shadow-sm transition';
         v1Label.innerHTML = `加水量 (<span class="unit-label">${currentUnit}</span>)`;
       }
 
-      const btn2 = document.getElementById('mode2Btn');
+      // 二次稀釋雙按鈕樣式與下方欄位標題
+      const m2Total = document.getElementById('m2TotalBtn');
+      const m2Add = document.getElementById('m2AddBtn');
       const v2Label = document.getElementById('v2Label');
-      if (mode2 === 'add') {
-        btn2.textContent = '外加溶劑(水)';
-        v2Label.innerHTML = `加水量 (<span class="unit-label">${currentUnit}</span>)`;
-      } else {
-        btn2.textContent = '定容至總量';
+
+      if (mode2 === 'total') {
+        m2Total.className = 'px-2.5 py-1 text-xs font-bold rounded-md bg-blue-600 text-white shadow-sm transition';
+        m2Add.className = 'px-2.5 py-1 text-xs font-bold rounded-md text-blue-900 transition';
         v2Label.innerHTML = `定容至 (<span class="unit-label">${currentUnit}</span>)`;
+      } else {
+        m2Total.className = 'px-2.5 py-1 text-xs font-bold rounded-md text-blue-900 transition';
+        m2Add.className = 'px-2.5 py-1 text-xs font-bold rounded-md bg-blue-600 text-white shadow-sm transition';
+        v2Label.innerHTML = `加水量 (<span class="unit-label">${currentUnit}</span>)`;
       }
     }
 
