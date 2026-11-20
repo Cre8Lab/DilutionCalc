@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>藥劑兩階段稀釋計算器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background-color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    .input-box:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+  </style>
+</head>
+<body class="text-slate-800 pb-10">
+
+  <!-- 頂部極簡導覽列 -->
+  <header class="bg-slate-900 text-white px-4 py-3.5 sticky top-0 z-20 shadow-sm">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <h1 class="text-lg font-bold tracking-wide">藥劑稀釋計算</h1>
+      <div class="flex bg-slate-800 p-1 rounded-lg border border-slate-700">
+        <button id="unitG" onclick="setUnit('g')" class="px-3 py-1 text-sm font-bold rounded-md bg-blue-600 text-white transition">g</button>
+        <button id="unitMl" onclick="setUnit('mL')" class="px-3 py-1 text-sm font-bold rounded-md text-slate-300 transition">mL</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
+
+    <!-- 常用藥劑快速帶入 -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+      <label class="block text-sm font-bold text-slate-500 mb-2">快速帶入常用藥劑</label>
+      <div class="relative">
+        <select id="presetSelect" onchange="applyPreset()" class="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-900 text-lg font-bold rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-blue-600">
+          <option value="custom">-- 自訂輸入數值 --</option>
+          <option value="koh" selected>KOH (A109) - 100%</option>
+          <option value="tea">TEA (A703) - 50%</option>
+          <option value="mo">鉬酸鈉 A115C - 99.8%</option>
+          <option value="ttaa">TTAA507C - 100%</option>
+          <option value="na_nitrite">亞硝酸鈉 A124 - 100%</option>
+          <option value="h2o2">H2O2 - 35%</option>
+          <option value="fe_sulfate">聚硫酸鐵 - 10%</option>
+          <option value="new">New - 35%</option>
+          <option value="no2">NO2 - 10%</option>
+          <option value="sebacic">癸二酸 - 100%</option>
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 卡片一：一次稀釋 -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="bg-amber-50 px-4 py-3 border-b border-amber-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-amber-500 text-white text-base font-bold flex items-center justify-center">1</span>
+          <h2 class="font-bold text-lg text-slate-900">一次稀釋</h2>
+        </div>
+        <button id="mode1Btn" onclick="toggleMode(1)" class="text-sm font-bold px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-800 active:scale-95 transition">
+          定容至總量
+        </button>
+      </div>
+
+      <div class="p-4 space-y-4">
+        <!-- 原藥劑濃度 -->
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="text-base font-bold text-slate-700">原藥劑濃度</label>
+            <button onclick="toggleC0Unit()" id="c0UnitBtn" class="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md active:bg-blue-100">
+              單位：% (點此切換 ppm)
+            </button>
+          </div>
+          <div class="relative">
+            <input type="number" inputmode="decimal" id="c0Input" value="100" oninput="calculate()" class="input-box w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-2xl font-bold text-slate-900 pr-16">
+            <span id="c0UnitBadge" class="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400">%</span>
+          </div>
+        </div>
+
+        <!-- 取樣量 與 稀釋至 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-base font-bold text-slate-700 mb-1.5">取樣量 (<span class="unit-label">g</span>)</label>
+            <input type="number" inputmode="decimal" id="w1Input" value="1" oninput="calculate()" class="input-box w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-2xl font-bold text-slate-900">
+          </div>
+          <div>
+            <label id="v1Label" class="block text-base font-bold text-slate-700 mb-1.5">稀釋至 (<span class="unit-label">g</span>)</label>
+            <input type="number" inputmode="decimal" id="v1Input" value="100" oninput="calculate()" class="input-box w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-2xl font-bold text-slate-900">
+          </div>
+        </div>
+
+        <!-- 一次稀釋結果 -->
+        <div class="bg-amber-50/70 rounded-xl p-3.5 border border-amber-200 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-bold text-amber-800">一次稀釋液濃度</div>
+            <div id="stage1Hint" class="text-xs text-amber-600 mt-0.5">總重 100 g</div>
+          </div>
+          <div class="text-right">
+            <span id="c1Result" class="text-3xl font-extrabold text-amber-700 tracking-tight">10,000</span>
+            <span class="text-base font-bold text-amber-700 ml-1">ppm</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 卡片二：二次稀釋 -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="bg-blue-50 px-4 py-3 border-b border-blue-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-blue-600 text-white text-base font-bold flex items-center justify-center">2</span>
+          <h2 class="font-bold text-lg text-slate-900">二次稀釋</h2>
+        </div>
+        <button id="mode2Btn" onclick="toggleMode(2)" class="text-sm font-bold px-3 py-1.5 rounded-lg bg-white border border-blue-300 text-blue-800 active:scale-95 transition">
+          外加溶劑(水)
+        </button>
+      </div>
+
+      <div class="p-4 space-y-4">
+        <!-- 母液濃度確認 (可展開手動覆寫) -->
+        <div class="bg-slate-50 rounded-xl px-3.5 py-2.5 border border-slate-200">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-bold text-slate-600">使用一次稀釋液：<strong id="c1DisplayMini" class="text-slate-900">10,000</strong> ppm</span>
+            <button onclick="toggleManualC1()" id="manualC1Toggle" class="text-xs font-bold text-blue-600 underline">手動修改</button>
+          </div>
+          <div id="manualC1Box" class="hidden mt-2.5 pt-2.5 border-t border-slate-200">
+            <input type="number" inputmode="decimal" id="c1ManualInput" placeholder="輸入自訂母液濃度 (ppm)" oninput="calculate()" class="input-box w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-lg font-bold text-slate-900">
+          </div>
+        </div>
+
+        <!-- 目標濃度 與 稀釋量 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-base font-bold text-slate-700 mb-1.5">目標濃度 (ppm)</label>
+            <input type="number" inputmode="decimal" id="c2Input" value="100" oninput="calculate()" class="input-box w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-2xl font-bold text-slate-900">
+          </div>
+          <div>
+            <label id="v2Label" class="block text-base font-bold text-slate-700 mb-1.5">加水/稀釋至 (<span class="unit-label">g</span>)</label>
+            <input type="number" inputmode="decimal" id="v2Input" value="100" oninput="calculate()" class="input-box w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-2xl font-bold text-slate-900">
+          </div>
+        </div>
+
+        <!-- 錯誤警告 -->
+        <div id="errorAlert" class="hidden bg-red-50 border border-red-200 text-red-700 px-3.5 py-3 rounded-xl text-base font-bold">
+          目標濃度必須小於一次稀釋液濃度！
+        </div>
+
+        <!-- 最終取樣量結果框 (高對比大字體) -->
+        <div id="resultCard" class="bg-blue-600 rounded-2xl p-4 text-white shadow-md">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-base font-bold text-blue-100">需加入一次稀釋液</span>
+            <button onclick="copyResult()" id="copyBtn" class="bg-blue-500 hover:bg-blue-400 active:bg-blue-700 text-white text-sm font-bold px-3 py-1 rounded-lg transition">
+              複製數值
+            </button>
+          </div>
+          <div class="flex items-baseline gap-2 my-1">
+            <span id="w2Result" class="text-4xl font-extrabold tracking-tight">1.0101</span>
+            <span class="text-xl font-bold text-blue-200 unit-label">g</span>
+          </div>
+          <div id="stage2Hint" class="text-sm text-blue-100 mt-1 border-t border-blue-500/60 pt-2">
+            配製後總量：101.0101 g
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 一鍵清空重算按鈕 -->
+    <button onclick="resetValues()" class="w-full py-3.5 rounded-xl bg-white border border-slate-300 text-slate-600 font-bold text-base active:bg-slate-100 transition">
+      重設為預設值
+    </button>
+
+  </main>
+
+  <script>
+    let currentUnit = 'g';
+    let c0IsPercent = true;
+    let mode1 = 'total';   // 'total' = 定容至總量, 'add' = 外加溶劑
+    let mode2 = 'add';     // 'add' = 外加溶劑, 'total' = 定容至總量
+    let isManualC1 = false;
+    let lastW2Value = '1.0101';
+
+    const presets = {
+      koh:        { c0: 100,  w1: 1,  v1: 100, m1: 'total', c2: 100,  v2: 100, m2: 'add' },
+      tea:        { c0: 50,   w1: 1,  v1: 1,   m1: 'total', c2: 20,   v2: 500, m2: 'add' },
+      mo:         { c0: 99.8, w1: 1,  v1: 1,   m1: 'total', c2: 30,   v2: 500, m2: 'add' },
+      ttaa:       { c0: 100,  w1: 1,  v1: 1,   m1: 'total', c2: 3333, v2: 8,   m2: 'add' },
+      na_nitrite: { c0: 100,  w1: 1,  v1: 1,   m1: 'total', c2: 3333, v2: 8,   m2: 'add' },
+      h2o2:       { c0: 35,   w1: 3,  v1: 105, m1: 'total', c2: 60,   v2: 500, m2: 'add' },
+      fe_sulfate: { c0: 10,   w1: 10, v1: 100, m1: 'total', c2: 60,   v2: 500, m2: 'add' },
+      new:        { c0: 35,   w1: 3,  v1: 105, m1: 'total', c2: 200,  v2: 500, m2: 'add' },
+      no2:        { c0: 10,   w1: 10, v1: 100, m1: 'total', c2: 200,  v2: 500, m2: 'add' },
+      sebacic:    { c0: 100,  w1: 10, v1: 110, m1: 'total', c2: 200,  v2: 500, m2: 'add' }
+    };
+
+    function setUnit(unit) {
+      currentUnit = unit;
+      document.getElementById('unitG').className = unit === 'g'
+        ? 'px-3 py-1 text-sm font-bold rounded-md bg-blue-600 text-white transition'
+        : 'px-3 py-1 text-sm font-bold rounded-md text-slate-300 transition';
+      document.getElementById('unitMl').className = unit === 'mL'
+        ? 'px-3 py-1 text-sm font-bold rounded-md bg-blue-600 text-white transition'
+        : 'px-3 py-1 text-sm font-bold rounded-md text-slate-300 transition';
+
+      document.querySelectorAll('.unit-label').forEach(el => el.textContent = unit);
+      calculate();
+    }
+
+    function toggleC0Unit() {
+      const input = document.getElementById('c0Input');
+      const val = parseFloat(input.value) || 0;
+      c0IsPercent = !c0IsPercent;
+
+      if (c0IsPercent) {
+        input.value = val ? +(val / 10000).toFixed(4) : '';
+        document.getElementById('c0UnitBtn').textContent = '單位：% (點此切換 ppm)';
+        document.getElementById('c0UnitBadge').textContent = '%';
+      } else {
+        input.value = val ? Math.round(val * 10000) : '';
+        document.getElementById('c0UnitBtn').textContent = '單位：ppm (點此切換 %)';
+        document.getElementById('c0UnitBadge').textContent = 'ppm';
+      }
+      calculate();
+    }
+
+    function toggleMode(stage) {
+      if (stage === 1) {
+        mode1 = mode1 === 'total' ? 'add' : 'total';
+      } else {
+        mode2 = mode2 === 'add' ? 'total' : 'add';
+      }
+      updateModeUI();
+      calculate();
+    }
+
+    function updateModeUI() {
+      const btn1 = document.getElementById('mode1Btn');
+      const v1Label = document.getElementById('v1Label');
+      if (mode1 === 'total') {
+        btn1.textContent = '定容至總量';
+        v1Label.innerHTML = `稀釋至 (<span class="unit-label">${currentUnit}</span>)`;
+      } else {
+        btn1.textContent = '外加溶劑(水)';
+        v1Label.innerHTML = `加水量 (<span class="unit-label">${currentUnit}</span>)`;
+      }
+
+      const btn2 = document.getElementById('mode2Btn');
+      const v2Label = document.getElementById('v2Label');
+      if (mode2 === 'add') {
+        btn2.textContent = '外加溶劑(水)';
+        v2Label.innerHTML = `加水量 (<span class="unit-label">${currentUnit}</span>)`;
+      } else {
+        btn2.textContent = '定容至總量';
+        v2Label.innerHTML = `定容至 (<span class="unit-label">${currentUnit}</span>)`;
+      }
+    }
+
+    function toggleManualC1() {
+      isManualC1 = !isManualC1;
+      const box = document.getElementById('manualC1Box');
+      const btn = document.getElementById('manualC1Toggle');
+      if (isManualC1) {
+        box.classList.remove('hidden');
+        btn.textContent = '恢復自動連動';
+        document.getElementById('c1ManualInput').focus();
+      } else {
+        box.classList.add('hidden');
+        btn.textContent = '手動修改';
+        document.getElementById('c1ManualInput').value = '';
+      }
+      calculate();
+    }
+
+    function applyPreset() {
+      const key = document.getElementById('presetSelect').value;
+      if (key === 'custom') return;
+      const p = presets[key];
+
+      if (!c0IsPercent) toggleC0Unit();
+      document.getElementById('c0Input').value = p.c0;
+      document.getElementById('w1Input').value = p.w1;
+      document.getElementById('v1Input').value = p.v1;
+      document.getElementById('c2Input').value = p.c2;
+      document.getElementById('v2Input').value = p.v2;
+
+      mode1 = p.m1;
+      mode2 = p.m2;
+      if (isManualC1) toggleManualC1();
+
+      updateModeUI();
+      calculate();
+    }
+
+    function resetValues() {
+      document.getElementById('presetSelect').value = 'koh';
+      applyPreset();
+    }
+
+    function formatNum(num, decimals = 2) {
+      if (!isFinite(num) || isNaN(num)) return '-';
+      return Number(num.toFixed(decimals)).toLocaleString('en-US', { maximumFractionDigits: decimals });
+    }
+
+    function calculate() {
+      const c0Raw = parseFloat(document.getElementById('c0Input').value) || 0;
+      const c0Ppm = c0IsPercent ? c0Raw * 10000 : c0Raw;
+      const w1 = parseFloat(document.getElementById('w1Input').value) || 0;
+      const v1 = parseFloat(document.getElementById('v1Input').value) || 0;
+
+      // 一次稀釋計算
+      let c1Ppm = 0;
+      let total1 = 0;
+      if (w1 > 0 && v1 > 0) {
+        if (mode1 === 'total') {
+          total1 = v1;
+          c1Ppm = c0Ppm * (w1 / v1);
+        } else {
+          total1 = w1 + v1;
+          c1Ppm = c0Ppm * (w1 / total1);
+        }
+      }
+
+      document.getElementById('c1Result').textContent = c1Ppm > 0 ? formatNum(c1Ppm, 2) : '-';
+      document.getElementById('stage1Hint').textContent = total1 > 0 ? `配製總量 ${formatNum(total1, 2)} ${currentUnit}` : '請輸入數值';
+
+      // 取得二次稀釋母液濃度
+      const manualVal = parseFloat(document.getElementById('c1ManualInput').value);
+      const activeC1 = (isManualC1 && manualVal > 0) ? manualVal : c1Ppm;
+      document.getElementById('c1DisplayMini').textContent = activeC1 > 0 ? formatNum(activeC1, 2) : '0';
+
+      // 二次稀釋計算
+      const c2Ppm = parseFloat(document.getElementById('c2Input').value) || 0;
+      const v2 = parseFloat(document.getElementById('v2Input').value) || 0;
+
+      const errorAlert = document.getElementById('errorAlert');
+      const resultCard = document.getElementById('resultCard');
+
+      if (activeC1 > 0 && c2Ppm >= activeC1) {
+        errorAlert.classList.remove('hidden');
+        resultCard.classList.add('opacity-40');
+        document.getElementById('w2Result').textContent = '-';
+        document.getElementById('stage2Hint').textContent = '無法計算';
+        lastW2Value = '';
+        return;
+      } else {
+        errorAlert.classList.add('hidden');
+        resultCard.classList.remove('opacity-40');
+      }
+
+      let w2 = 0;
+      let total2 = 0;
+      if (activeC1 > 0 && c2Ppm > 0 && v2 > 0) {
+        if (mode2 === 'add') {
+          w2 = (c2Ppm * v2) / (activeC1 - c2Ppm);
+          total2 = w2 + v2;
+        } else {
+          w2 = (c2Ppm * v2) / activeC1;
+          total2 = v2;
+        }
+      }
+
+      if (w2 > 0) {
+        const w2Formatted = w2.toFixed(4);
+        lastW2Value = w2Formatted;
+        document.getElementById('w2Result').textContent = w2Formatted;
+        document.getElementById('stage2Hint').textContent = `配製後總量：${total2.toFixed(4)} ${currentUnit}`;
+      } else {
+        lastW2Value = '';
+        document.getElementById('w2Result').textContent = '-';
+        document.getElementById('stage2Hint').textContent = '請輸入目標濃度與稀釋量';
+      }
+    }
+
+    function copyResult() {
+      if (!lastW2Value) return;
+      navigator.clipboard.writeText(lastW2Value).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '已複製！';
+        btn.classList.replace('bg-blue-500', 'bg-emerald-500');
+        setTimeout(() => {
+          btn.textContent = '複製數值';
+          btn.classList.replace('bg-emerald-500', 'bg-blue-500');
+        }, 1500);
+      });
+    }
+
+    // 初始化
+    updateModeUI();
+    calculate();
+  </script>
+</body>
+</html>
